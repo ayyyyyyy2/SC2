@@ -43,6 +43,21 @@ function writeText(res, status, text, extraHeaders) {
   res.end(text);
 }
 
+function getMongoUri() {
+  const candidates = [
+    process.env.MONGODB_URI,
+    process.env.MONGO_URI,
+    process.env.MONGO_URL,
+    process.env.DATABASE_URL,
+    process.env.VITE_MONGODB_URI,
+  ];
+  const found = candidates.find(
+    (value) => typeof value === "string" && value.trim().length > 0,
+  );
+  if (!found) throw new Error("MONGODB_URI not set");
+  return found.trim();
+}
+
 async function ensureBuilt() {
   if (fs.existsSync(indexHtmlPath)) return;
   const vite = await import("vite");
@@ -67,8 +82,7 @@ async function verifyPassword(password, storedHash) {
 
 async function getUsersCollection() {
   if (usersCollection) return usersCollection;
-  const uri = process.env.MONGODB_URI;
-  if (!uri) throw new Error("MONGODB_URI not set");
+  const uri = getMongoUri();
   if (!mongoClient) mongoClient = new MongoClient(uri);
   if (!mongoConnecting) mongoConnecting = mongoClient.connect();
   await mongoConnecting;
@@ -80,8 +94,7 @@ async function getUsersCollection() {
 
 async function getSongsCollection() {
   if (songsCollection) return songsCollection;
-  const uri = process.env.MONGODB_URI;
-  if (!uri) throw new Error("MONGODB_URI not set");
+  const uri = getMongoUri();
   if (!mongoClient) mongoClient = new MongoClient(uri);
   if (!mongoConnecting) mongoConnecting = mongoClient.connect();
   await mongoConnecting;
@@ -93,8 +106,7 @@ async function getSongsCollection() {
 
 async function ensureBuckets() {
   if (audioBucket && artworkBucket) return { audioBucket, artworkBucket };
-  const uri = process.env.MONGODB_URI;
-  if (!uri) throw new Error("MONGODB_URI not set");
+  const uri = getMongoUri();
   if (!mongoClient) mongoClient = new MongoClient(uri);
   if (!mongoConnecting) mongoConnecting = mongoClient.connect();
   await mongoConnecting;

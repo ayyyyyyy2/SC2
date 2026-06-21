@@ -2,6 +2,13 @@ import { MongoClient, ObjectId, GridFSBucket } from "mongodb";
 import crypto from "node:crypto";
 import Busboy from "busboy";
 
+export const runtime = "nodejs";
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
 const defaultDbName = process.env.MONGODB_DB || "sc22";
 
 let mongoClient;
@@ -33,9 +40,23 @@ function writeText(res, status, text, extraHeaders) {
   res.end(text);
 }
 
+function getMongoUri() {
+  const candidates = [
+    process.env.MONGODB_URI,
+    process.env.MONGO_URI,
+    process.env.MONGO_URL,
+    process.env.DATABASE_URL,
+    process.env.VITE_MONGODB_URI,
+  ];
+  const found = candidates.find(
+    (value) => typeof value === "string" && value.trim().length > 0,
+  );
+  if (!found) throw new Error("MONGODB_URI not set");
+  return found.trim();
+}
+
 async function getMongoClient() {
-  const uri = process.env.MONGODB_URI;
-  if (!uri) throw new Error("MONGODB_URI not set");
+  const uri = getMongoUri();
   if (!mongoClient) mongoClient = new MongoClient(uri);
   if (!mongoConnecting) mongoConnecting = mongoClient.connect();
   await mongoConnecting;
